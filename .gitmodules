@@ -1,0 +1,3 @@
+[submodule "simpype"]
+	path = simpype
+	url = git@github.com:moorescloud/simpype.git
