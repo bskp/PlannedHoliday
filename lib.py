@@ -1,13 +1,16 @@
 #!/usr/bin/env python3
 
+import sys
 import socket
 import glob
 from time import sleep
 from functools import reduce
 from random import shuffle
+import signal
 
 import numpy as np
-from PIL import Image, ImageChops, ImageDraw, ImageFont
+from PIL import Image, ImageChops, ImageDraw, ImageFont, ImageColor
+import matplotlib
 
 # Helpers
 
@@ -32,8 +35,24 @@ def monochrome(color):
     return Image.new('RGB', (7, 7), color)
 
 
+def gradient_map(array, *colors):
+    array = np.clip(array, 0, 1)
+
+    cs = (ImageColor.getrgb(name) for name in colors)
+    cmap = matplotlib.colors.LinearSegmentedColormap.from_list(None, *colors)
+    imgrad = cmap(array)
+    imgrad = np.uint8(imgrad * 255)
+
+    i =  Image.fromarray(imgrad[:, :, :3], 'RGB' )
+    return i
+
+
 def mix(*images):
     return reduce(ImageChops.screen, images)
+
+
+def decay(img, factor=0.2):
+    return Image.blend(img, monochrome('black'), factor)
 
 
 class SevenBySeven:
@@ -43,6 +62,14 @@ class SevenBySeven:
                             socket.SOCK_DGRAM) # UDP
         self.target = (ip, port)
         self.show( monochrome('black') )
+
+        # Register SIGINT/SIGTERM handlers
+        def blackout(signal, frame):
+            self.show( monochrome('black') )
+            sys.exit()
+
+        signal.signal(signal.SIGINT, blackout)
+        signal.signal(signal.SIGTERM, blackout)
 
 
     def _map(self, idx):
@@ -107,6 +134,20 @@ class SevenBySeven:
             sleep(duration/steps)
 
 
+    def feed(self, data):
+        if len(data) is not 7:
+            raise ValueError('Seven data points excepted.')
+
+        array = np.array(data, ndmin=2)
+
+        colors = 'black', 'brown', 'red', 'yellow', 'white'
+        horizontal, vertical = 0, 1
+
+        new = self.current.transform(self.current.size, Image.AFFINE, (1, 0, horizontal, 0, 1, vertical))
+        row_image = gradient_map( array, colors)
+        new.paste( row_image, (0, 6) )
+        self.show( new )
+
 
     def _reveal_by_pixel(self, img, duration, order):
         for idx in order:
@@ -148,6 +189,13 @@ if __name__ == '__main__':
     screen = SevenBySeven()
 
     while True:
+        colors = 'black', 'navy', 'yellow'
+
+        for i in range(5):
+            data = (0, 0.3, 0, 1, 0.8, 0.5, 0.5)
+            screen.feed( data )
+            sleep(0.1)
+
         screen.write('Game of Life: Start now!')
         screen.fade( load('rainbow'), 2)
         screen.pan( load('tot'), 1)
