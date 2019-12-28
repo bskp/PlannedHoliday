@@ -65,7 +65,7 @@ class SevenBySeven:
 
         # Register SIGINT/SIGTERM handlers
         def blackout(signal, frame):
-            self.show( monochrome('black') )
+            self.dissapear()
             sys.exit()
 
         signal.signal(signal.SIGINT, blackout)
@@ -134,13 +134,15 @@ class SevenBySeven:
             sleep(duration/steps)
 
 
-    def feed(self, data):
+    def feed(self, data, colors=None):
         if len(data) is not 7:
             raise ValueError('Seven data points excepted.')
 
         array = np.array(data, ndmin=2)
 
-        colors = 'black', 'brown', 'red', 'yellow', 'white'
+        if colors is None:
+            colors = 'black', 'brown', 'red', 'yellow', 'white'
+
         horizontal, vertical = 0, 1
 
         new = self.current.transform(self.current.size, Image.AFFINE, (1, 0, horizontal, 0, 1, vertical))
@@ -170,6 +172,24 @@ class SevenBySeven:
         rendered = write(text)
         self.pan(rendered, rendered.size[0]/15*speed, 2)
 
+    def dissapear(self):
+        factor = 5
+        full_dim = (7*factor*2, 7*factor*2)
+        still = self.current.resize(full_dim)
+
+        for s in reversed(range(1, 7*factor)):
+            smol = still.resize((s*2, s*2))
+            bg = monochrome('black').resize(full_dim)
+            off = int(7*factor - s)
+            bg.paste(smol, (off, off))
+            self.show( bg.resize((7, 7), Image.BICUBIC) )
+            sleep(0.02)
+
+
+
+
+
+
 
 
 def hsvTransform(img, h=None, s=None, v=None):
@@ -191,13 +211,14 @@ if __name__ == '__main__':
     while True:
         colors = 'black', 'navy', 'yellow'
 
+        screen.fade( load('rainbow'), 2)
+        screen.dissapear()
+        screen.write('Game of Life: Start now!')
+        screen.pan( load('tot'), 1)
+        screen.snake( monochrome('blue') )
+        screen.dissolve( monochrome('magenta') )
         for i in range(5):
             data = (0, 0.3, 0, 1, 0.8, 0.5, 0.5)
             screen.feed( data )
             sleep(0.1)
 
-        screen.write('Game of Life: Start now!')
-        screen.fade( load('rainbow'), 2)
-        screen.pan( load('tot'), 1)
-        screen.snake( monochrome('blue') )
-        screen.dissolve( monochrome('magenta') )

@@ -25,7 +25,7 @@ class Sprite:
         ''' Get the tile at the given index. The sprite's tiles are enumerated in a left-to-right, bottom-to-up fashion. '''
         ox, oy = self.offset
         x = idx%self.grid[0]
-        y = int( idx/self.grid[1] )
+        y = int( idx/self.grid[0] )
         return self.src.crop((
             x*self.gs + ox, 
             y*self.gs + oy, 

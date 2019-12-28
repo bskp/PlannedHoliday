@@ -9,7 +9,6 @@ samplerate = sd.query_devices(None, 'input')['default_samplerate']
 
 low, high = (100, 4000)
 bins = 7 
-gain = 100
 block_duration = 20 #ms
 
 delta_f = (high - low) / (bins - 1)
@@ -19,7 +18,7 @@ low_bin = math.floor(low / delta_f)
 normalization_tau = 4 # seconds
 d = block_duration/normalization_tau/1000
 
-avgs = np.ones(7)/gain
+avgs = np.ones(7)/100  # initial values
 
 colors = 'black', 'blue', 'cyan', 'yellow', 'red'
 
